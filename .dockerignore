@@ -1,0 +1,31 @@
+# Pliki i katalogi Pythona
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git i środowisko
+.git/
+.gitignore
+env/
+.venv/
+*.env
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db
+
+# Dane wyjściowe / testowe
+*.csv
+*.xlsx
+*.log
+*.tmp
+*.bak
+
+# Modele (jeśli nie mają być kopiowane do kontenera)
+*.pth
+*.pkl
+
+# IDE i edytory
+.vscode/
+.idea/
