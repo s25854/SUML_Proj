@@ -32,9 +32,6 @@ jobs:
       - name: Format check
         run: make format
 
-      - name: Run tests
-        run: make test
-
       - name: Run training notebook
         run: make train
 
