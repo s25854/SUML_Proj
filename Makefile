@@ -6,9 +6,6 @@ install:
 format:
 	black app/ model/
 
-lint:
-	flake8 app/ model/
-
 test:
 	pytest tests/
 
