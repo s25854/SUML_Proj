@@ -1,0 +1,39 @@
+name: Continuous Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-to-huggingface:
+    runs-on: ubuntu-latest
+    env:
+      HF: ${{ secrets.HF }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install huggingface CLI
+        run: |
+          pip install -U "huggingface_hub[cli]"
+
+      - name: Login to Hugging Face Hub
+        run: |
+          huggingface-cli login --token $HF --add-to-git-credential
+
+      - name: Push App folder to Hugging Face
+        run: |
+          huggingface-cli upload Sokol77/Projekt_SUML ./App --repo-type=space --commit-message="Sync App files"
+
+      - name: Push Model folder to Hugging Face
+        run: |
+          huggingface-cli upload Sokol77/Projekt_SUML ./Model /Model --repo-type=space --commit-message="Sync Model"
+
+      - name: Push Results folder to Hugging Face
+        run: |
+          huggingface-cli upload Sokol77/Projekt_SUML ./Results /Metrics --repo-type=space --commit-message="Sync Model"
