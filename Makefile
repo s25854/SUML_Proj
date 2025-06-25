@@ -6,9 +6,6 @@ install:
 format:
 	black app/ model/
 
-test:
-	pytest tests/
-
 train:
 	papermill training.ipynb output.ipynb
 
