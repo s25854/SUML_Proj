@@ -36,4 +36,4 @@ jobs:
 
       - name: Push Results folder to Hugging Face
         run: |
-          huggingface-cli upload Sokol77/Projekt_SUML ./Results /metrics --repo-type=space --commit-message="Sync Model"
+          huggingface-cli upload Sokol77/Projekt_SUML ./Results /results --repo-type=space --commit-message="Sync Model"
