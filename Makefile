@@ -1,7 +1,7 @@
 install:
 	pip install --upgrade pip && \
 	pip install -r requirements.txt && \
-	pip install black flake8 pytest papermill cml
+	pip install black pytest papermill cml
 
 format:
 	black app/ model/
@@ -28,7 +28,7 @@ run:
 	streamlit run app/streamlit_app.py
 
 update-branch:
-	git config --global user.name $(USER_NAME)
-	git config --global user.email $(USER_EMAIL)
+	git config --global user.name "CI Bot"
+	git config --global user.email "ci@github.com"
 	git commit -am "Update with new results"
 	git push --force origin HEAD:update
