@@ -34,3 +34,5 @@ jobs:
           huggingface-cli upload Sokol77/Projekt_SUML ./Dockerfile /Dockerfile --repo-type=space --commit-message="Add Dockerfile"
           huggingface-cli upload Sokol77/Projekt_SUML ./.dockerignore /.dockerignore --repo-type=space --commit-message="Add dockerignore"
           huggingface-cli upload Sokol77/Projekt_SUML ./requirements.txt /requirements.txt --repo-type=space --commit-message="Add requirements"
+          huggingface-cli upload Sokol77/Projekt_SUML ./photos /photos --repo-type=space --commit-message="Add photos"
+          
