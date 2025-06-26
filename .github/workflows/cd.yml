@@ -28,7 +28,7 @@ jobs:
 
       - name: Push App folder to Hugging Face
         run: |
-          huggingface-cli upload Sokol77/Projekt_SUML ./app /model --repo-type=space --commit-message="Sync App files"
+          huggingface-cli upload Sokol77/Projekt_SUML ./app /app --repo-type=space --commit-message="Sync App files"
 
       - name: Push Model folder to Hugging Face
         run: |
