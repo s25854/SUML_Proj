@@ -16,6 +16,9 @@ eval:
 	echo '\n## Confusion Matrix Plot' >> report.md
 	echo '![Confusion Matrix](./Results/model_results.png)' >> report.md
 
+	git config --global user.name $(USER_NAME)
+	git config --global user.email $(USER_EMAIL)
+
 	cml comment create report.md
 
 	git commit -am "new changes"
@@ -28,7 +31,7 @@ run:
 	streamlit run app/streamlit_app.py
 
 update-branch:
-	git config --global user.name "CI Bot"
-	git config --global user.email "ci@github.com"
+	git config --global user.name $(USER_NAME)
+	git config --global user.email $(USER_EMAIL)
 	git commit -am "Update with new results"
 	git push --force origin HEAD:update
