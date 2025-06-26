@@ -31,6 +31,4 @@ jobs:
           huggingface-cli upload Sokol77/Projekt_SUML ./app /app --repo-type=space --commit-message="Sync App files"
           huggingface-cli upload Sokol77/Projekt_SUML ./Results /results --repo-type=space --commit-message="Sync results"
           huggingface-cli upload Sokol77/Projekt_SUML ./model /model --repo-type=space --commit-message="Sync Model"
-          huggingface-cli upload Sokol77/Projekt_SUML ./data /data --repo-type=space --commit-message="Sync data"
-  
-  deploy: hf-login push-hub
+      
