@@ -16,13 +16,8 @@ eval:
 	echo '\n## Confusion Matrix Plot' >> report.md
 	echo '![Confusion Matrix](./Results/model_results.png)' >> report.md
 
-	git config --global user.name $(USER_NAME)
-	git config --global user.email $(USER_EMAIL)
-
 	cml comment create report.md
 
-	git commit -am "new changes"
-	git push origin main
 
 build:
 	docker build -t wine-streamlit-app .
