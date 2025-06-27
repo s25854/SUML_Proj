@@ -8,6 +8,10 @@ from pathlib import Path
 from PIL import Image
 import base64
 import torch
+import os
+from pymongo import MongoClient
+from datetime import datetime
+from pytz import timezone, UTC
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -18,6 +22,28 @@ IMAGE_DIR = BASE_DIR / "photos"
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 from model.wine_dataset import WineQualityMLP
+
+def get_user_id():
+    return st.session_state.get("user_id", None)
+
+@st.cache_resource
+def get_mongo_client():
+    uri = st.secrets.get("MONGO_URI") or os.environ.get("MONGO_URI")
+    return MongoClient(uri)
+
+client = get_mongo_client()
+db = client["wine_app"]
+predictions_collection = db["predictions"]
+
+def save_prediction(input_data: dict, prediction: float):
+    record = {
+        "user_id": get_user_id(),
+        "timestamp": datetime.utcnow(),
+        "input": input_data,
+        "prediction": prediction,
+        "model_version": "mlp-v1.0"
+    }
+    predictions_collection.insert_one(record)
 
 @st.cache_resource
 def load_model():
@@ -104,7 +130,7 @@ def main():
     with col_main:
         st.title("WineToGrapes - oceń jakoś wina")
 
-        tab_basic, tab_advanced, tab_predict = st.tabs(["Podstawowe", "Zaawansowane", "Przewiduj"])
+        tab_basic, tab_advanced, tab_predict, tab_history = st.tabs(["Podstawowe", "Zaawansowane", "Przewiduj", "Historia"])
 
         with tab_basic:
             st.markdown("### Kwasowość")
@@ -161,7 +187,7 @@ def main():
             with col1:
                 density = st.slider(
                     "Gęstość (g/cm³)",
-                    min_value=0.99, max_value=1.01, value=0.996,
+                    min_value=0.99, max_value=1.01, value=0.996, step=0.001,
                     help="Zależy od zawartości alkoholu i cukru"
                 )
             with col2:
@@ -205,7 +231,59 @@ def main():
             with st.form("wine_predict_form"):
                 st.markdown("**Przewiduj jakość Twojego wina**")
                 st.markdown("Wypełnij parametry chemiczne w poprzednich zakładkach:")
-                submitted = st.form_submit_button("🔮 Oceń Jakość Wina")
+                submitted = st.form_submit_button("Oceń Jakość Wina")
+
+        with tab_history:
+            st.markdown("### Historia Twoich Predykcji")
+
+            if "refresh" not in st.session_state:
+                st.session_state.refresh = False
+            if "clear_history" not in st.session_state:
+                st.session_state.clear_history = False
+
+            username = st.text_input("Podaj swoją nazwę użytkownika", max_chars=32)
+
+            if username:
+                st.session_state["user_id"] = username.strip().lower()
+            else:
+                st.warning("Wprowadź nazwę użytkownika, aby kontynuować.")
+                st.stop()
+
+            if st.session_state.get("clear_history"):
+                predictions_collection.delete_many({"user_id": get_user_id()})
+                st.success("Historia została usunięta.")
+                st.session_state.clear_history = False
+
+            if st.session_state.get("refresh"):
+                st.success("Dane zostały odświeżone.")
+                st.session_state.refresh = False
+
+            history = list(predictions_collection.find({"user_id": get_user_id()}).sort("timestamp", -1))
+
+            if history:
+                for entry in history:
+                    utc_time = entry["timestamp"].replace(tzinfo=UTC)
+                    local_time = utc_time.astimezone(timezone("Europe/Warsaw"))
+                    timestamp = local_time.strftime("%Y-%m-%d %H:%M")
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        st.write("#### TIME:", timestamp)
+                        st.write("**Parametry wejściowe:**")
+                        for k, v in entry["input"].items():
+                            st.write(f"- {k}: `{round(v, 2)}`")
+                    with col2:
+                        st.metric("Predykcja", f"{round(entry['prediction'], 1)}/10")
+
+            col_btn1, col_btn2 = st.columns([1, 1])
+            with col_btn1:
+                if st.button("Wyczyść historię"):
+                    st.session_state.clear_history = True
+                    st.rerun()
+
+            with col_btn2:
+                if st.button("Odśwież dane"):
+                    st.session_state.refresh = True
+                    st.rerun()
 
     with col_result:
         if submitted:
@@ -243,11 +321,16 @@ def main():
 
                 st.markdown(f"### {status_color} *{comment}*")
 
+                prediction = model(tensor_input)[0].item()
+                prediction = max(0, min(10, float(prediction)))
+
+                save_prediction({k: float(round(v, 4)) for k, v in user_input.items()}, prediction)
+
                 st.markdown("### Analiza Składników")
 
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    alcohol_status = "🟢 Optymalna" if 10 <= alcohol <= 13 else "🔴 Wymaga korekty"
+                    alcohol_status = "🟢 Optymalna" if 10 <= alcohol <= 14 else "🔴 Wymaga korekty"
                     st.write(f"**Alkohol ({alcohol}% vol):** {alcohol_status}")
 
                     acidity_status = "🟢 Zbalansowana" if 0.2 <= volatile_acidity <= 0.6 else "🔴 Problematyczna"
