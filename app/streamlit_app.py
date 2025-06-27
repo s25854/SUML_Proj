@@ -28,7 +28,10 @@ def get_user_id():
 
 @st.cache_resource
 def get_mongo_client():
-    uri = st.secrets.get("MONGO_URI") or os.environ.get("MONGO_URI")
+    uri = st.secrets.get("MONGO_URI", None) or os.environ.get("MONGO_URI")
+    if not uri:
+        st.error("Nie znaleziono URI do MongoDB.")
+        st.stop()
     return MongoClient(uri)
 
 client = get_mongo_client()
