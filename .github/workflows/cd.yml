@@ -29,10 +29,8 @@ jobs:
       - name: Push App folder to Hugging Face
         run: |
           huggingface-cli upload Sokol77/Projekt_SUML ./app /app --repo-type=space --commit-message="Sync App files"
-          huggingface-cli upload Sokol77/Projekt_SUML ./Results /results --repo-type=space --commit-message="Sync results"
           huggingface-cli upload Sokol77/Projekt_SUML ./model /model --repo-type=space --commit-message="Sync Model"
           huggingface-cli upload Sokol77/Projekt_SUML ./Dockerfile /Dockerfile --repo-type=space --commit-message="Add Dockerfile"
           huggingface-cli upload Sokol77/Projekt_SUML ./.dockerignore /.dockerignore --repo-type=space --commit-message="Add dockerignore"
           huggingface-cli upload Sokol77/Projekt_SUML ./requirements.txt /requirements.txt --repo-type=space --commit-message="Add requirements"
           huggingface-cli upload Sokol77/Projekt_SUML ./photos /photos --repo-type=space --commit-message="Add photos"
-          
