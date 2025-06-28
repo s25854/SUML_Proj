@@ -23,8 +23,10 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 from model.wine_dataset import WineQualityMLP
 
+
 def get_user_id():
     return st.session_state.get("user_id", None)
+
 
 @st.cache_resource
 def get_mongo_client():
@@ -37,9 +39,11 @@ def get_mongo_client():
         st.stop()
     return MongoClient(uri)
 
+
 client = get_mongo_client()
 db = client["wine_app"]
 predictions_collection = db["predictions"]
+
 
 def save_prediction(input_data: dict, prediction: float):
     record = {
@@ -47,9 +51,10 @@ def save_prediction(input_data: dict, prediction: float):
         "timestamp": datetime.utcnow(),
         "input": input_data,
         "prediction": prediction,
-        "model_version": "mlp-v1.0"
+        "model_version": "mlp-v1.0",
     }
     predictions_collection.insert_one(record)
+
 
 @st.cache_resource
 def load_model():
@@ -58,28 +63,52 @@ def load_model():
     model.eval()
     return model
 
+
 @st.cache_resource
 def load_scaler():
-    with open(SCALER_PATH, 'rb') as f:
+    with open(SCALER_PATH, "rb") as f:
         model = pickle.load(f)
     return model
 
-def preprocess_input(user_data):
-    user_data['acidity_ratio'] = user_data['fixed acidity'] / (user_data['volatile acidity'] + 1e-7)
-    user_data['sulfur_ratio'] = user_data['free sulfur dioxide'] / (user_data['total sulfur dioxide'] + 1e-7)
-    user_data['sweetness_index'] = user_data['residual sugar'] / (user_data['alcohol'] + 1e-7)
-    user_data['total_acidity'] = user_data['fixed acidity'] + user_data['volatile acidity'] + user_data['citric acid']
-    user_data['body_score'] = (user_data['density'] * 1000) - user_data['alcohol']
-    user_data['minerality'] = user_data['sulphates'] + user_data['chlorides']
 
-    features_to_remove = ['fixed acidity', 'residual sugar', 'minerality','density']
+def preprocess_input(user_data):
+    user_data["acidity_ratio"] = user_data["fixed acidity"] / (
+        user_data["volatile acidity"] + 1e-7
+    )
+    user_data["sulfur_ratio"] = user_data["free sulfur dioxide"] / (
+        user_data["total sulfur dioxide"] + 1e-7
+    )
+    user_data["sweetness_index"] = user_data["residual sugar"] / (
+        user_data["alcohol"] + 1e-7
+    )
+    user_data["total_acidity"] = (
+        user_data["fixed acidity"]
+        + user_data["volatile acidity"]
+        + user_data["citric acid"]
+    )
+    user_data["body_score"] = (user_data["density"] * 1000) - user_data["alcohol"]
+    user_data["minerality"] = user_data["sulphates"] + user_data["chlorides"]
+
+    features_to_remove = ["fixed acidity", "residual sugar", "minerality", "density"]
     for feature in features_to_remove:
         if feature in user_data.index:
             user_data = user_data.drop(feature)
 
-    final_features = ['volatile acidity', 'citric acid', 'chlorides', 'free sulfur dioxide',
-                      'total sulfur dioxide', 'pH', 'sulphates', 'alcohol',
-                      'acidity_ratio', 'sulfur_ratio', 'sweetness_index', 'total_acidity', 'body_score']
+    final_features = [
+        "volatile acidity",
+        "citric acid",
+        "chlorides",
+        "free sulfur dioxide",
+        "total sulfur dioxide",
+        "pH",
+        "sulphates",
+        "alcohol",
+        "acidity_ratio",
+        "sulfur_ratio",
+        "sweetness_index",
+        "total_acidity",
+        "body_score",
+    ]
 
     user_data_filtered = user_data[final_features]
 
@@ -92,7 +121,7 @@ def add_style(image_file):
     with open(image_file, "rb") as file:
         encoded = base64.b64encode(file.read()).decode()
     st.markdown(
-            f"""
+        f"""
             <style>
             input, select, textarea {{
                 max-width: 100%;
@@ -124,7 +153,7 @@ def add_style(image_file):
             }}
             </style>
             """,
-            unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -136,40 +165,52 @@ def main():
     with col_main:
         st.title("WineToGrapes - oceń jakoś wina")
 
-        tab_basic, tab_advanced, tab_predict, tab_history = st.tabs(["Podstawowe", "Zaawansowane", "Przewiduj", "Historia"])
+        tab_basic, tab_advanced, tab_predict, tab_history = st.tabs(
+            ["Podstawowe", "Zaawansowane", "Przewiduj", "Historia"]
+        )
 
         with tab_basic:
             st.markdown("### Kwasowość")
 
             fixed_acidity = st.slider(
                 "Kwasowość stała (g/L)",
-                min_value=4.0, max_value=16.0, value=8.0, step=0.1,
-                help="Nieulotne kwasy jak winowy, jabłkowy"
+                min_value=4.0,
+                max_value=16.0,
+                value=8.0,
+                step=0.1,
+                help="Nieulotne kwasy jak winowy, jabłkowy",
             )
 
             volatile_acidity = st.slider(
-                "Kwasowość lotna",
-                min_value=0.0, max_value=1.5, value=0.5, step=0.01
+                "Kwasowość lotna", min_value=0.0, max_value=1.5, value=0.5, step=0.01
             )
 
             citric_acid = st.slider(
                 "Kwas cytrynowy (g/L)",
-                min_value=0.0, max_value=1.0, value=0.25, step=0.01,
-                help="Dodaje świeżość i smak do wina"
+                min_value=0.0,
+                max_value=1.0,
+                value=0.25,
+                step=0.01,
+                help="Dodaje świeżość i smak do wina",
             )
 
             st.markdown("### Cukier i Alkohol")
 
             residual_sugar = st.number_input(
                 "Cukier resztkowy (g/L)",
-                min_value=0.5, max_value=16.0, value=2.0,
-                help="Cukier pozostały po fermentacji"
+                min_value=0.5,
+                max_value=16.0,
+                value=2.0,
+                help="Cukier pozostały po fermentacji",
             )
 
             alcohol = st.slider(
                 "Alkohol (% vol)",
-                min_value=8.0, max_value=15.0, value=10.0, step=0.1,
-                help="Zawartość alkoholu etylowego"
+                min_value=8.0,
+                max_value=15.0,
+                value=10.0,
+                step=0.1,
+                help="Zawartość alkoholu etylowego",
             )
 
         with tab_advanced:
@@ -177,14 +218,18 @@ def main():
 
             free_so2 = st.number_input(
                 "Wolny SO₂ (mg/L)",
-                min_value=1.0, max_value=80.0, value=15.0,
-                help="Zapobiega utlenianiu i działaniu bakterii"
+                min_value=1.0,
+                max_value=80.0,
+                value=15.0,
+                help="Zapobiega utlenianiu i działaniu bakterii",
             )
 
             total_so2 = st.number_input(
                 "Całkowity SO₂ (mg/L)",
-                min_value=6.0, max_value=300.0, value=50.0,
-                help="Suma wolnego i związanego SO₂"
+                min_value=6.0,
+                max_value=300.0,
+                value=50.0,
+                help="Suma wolnego i związanego SO₂",
             )
 
             st.markdown("### Właściwości Fizyczne")
@@ -193,14 +238,20 @@ def main():
             with col1:
                 density = st.slider(
                     "Gęstość (g/cm³)",
-                    min_value=0.99, max_value=1.01, value=0.996, step=0.001,
-                    help="Zależy od zawartości alkoholu i cukru"
+                    min_value=0.99,
+                    max_value=1.01,
+                    value=0.996,
+                    step=0.001,
+                    help="Zależy od zawartości alkoholu i cukru",
                 )
             with col2:
                 ph = st.slider(
                     "pH",
-                    min_value=2.5, max_value=4.5, value=3.3, step=0.1,
-                    help="Kwasowość wina (niższe = bardziej kwaśne)"
+                    min_value=2.5,
+                    max_value=4.5,
+                    value=3.3,
+                    step=0.1,
+                    help="Kwasowość wina (niższe = bardziej kwaśne)",
                 )
 
             st.markdown("### Minerały")
@@ -209,30 +260,38 @@ def main():
             with col3:
                 chlorides = st.slider(
                     "Chlorki (g/L)",
-                    min_value=0.01, max_value=1.0, value=0.08, step=0.01,
-                    help="Zawartość soli w winie"
+                    min_value=0.01,
+                    max_value=1.0,
+                    value=0.08,
+                    step=0.01,
+                    help="Zawartość soli w winie",
                 )
             with col4:
                 sulphates = st.slider(
                     "Siarczany (g/L)",
-                    min_value=0.3, max_value=2.0, value=0.6, step=0.05,
-                    help="Przyczyniają się do SO₂ i jakości wina"
+                    min_value=0.3,
+                    max_value=2.0,
+                    value=0.6,
+                    step=0.05,
+                    help="Przyczyniają się do SO₂ i jakości wina",
                 )
 
         with tab_predict:
-            user_input = pd.Series({
-                'fixed acidity': fixed_acidity,
-                'volatile acidity': volatile_acidity,
-                'citric acid': citric_acid,
-                'residual sugar': residual_sugar,
-                'chlorides': chlorides,
-                'free sulfur dioxide': free_so2,
-                'total sulfur dioxide': total_so2,
-                'density': density,
-                'pH': ph,
-                'sulphates': sulphates,
-                'alcohol': alcohol
-            })
+            user_input = pd.Series(
+                {
+                    "fixed acidity": fixed_acidity,
+                    "volatile acidity": volatile_acidity,
+                    "citric acid": citric_acid,
+                    "residual sugar": residual_sugar,
+                    "chlorides": chlorides,
+                    "free sulfur dioxide": free_so2,
+                    "total sulfur dioxide": total_so2,
+                    "density": density,
+                    "pH": ph,
+                    "sulphates": sulphates,
+                    "alcohol": alcohol,
+                }
+            )
 
             with st.form("wine_predict_form"):
                 st.markdown("**Przewiduj jakość Twojego wina**")
@@ -264,7 +323,11 @@ def main():
                 st.success("Dane zostały odświeżone.")
                 st.session_state.refresh = False
 
-            history = list(predictions_collection.find({"user_id": get_user_id()}).sort("timestamp", -1))
+            history = list(
+                predictions_collection.find({"user_id": get_user_id()}).sort(
+                    "timestamp", -1
+                )
+            )
 
             if history:
                 for entry in history:
@@ -307,10 +370,14 @@ def main():
                 st.metric("Przewidywana jakość wina", f"{prediction:.1f}/10")
 
                 if prediction >= 8.0:
-                    comment = "Wyjątkowe wino! Charakterystyka godna najlepszych sommelierów"
+                    comment = (
+                        "Wyjątkowe wino! Charakterystyka godna najlepszych sommelierów"
+                    )
                     status_color = "🟢"
                 elif prediction >= 7.0:
-                    comment = "Bardzo dobre wino o wysokiej jakości. Polecane do degustacji"
+                    comment = (
+                        "Bardzo dobre wino o wysokiej jakości. Polecane do degustacji"
+                    )
                     status_color = "🟢"
                 elif prediction >= 6.0:
                     comment = "Solidne wino o dobrej jakości. Przyjemne w smaku"
@@ -330,23 +397,35 @@ def main():
                 prediction = model(tensor_input)[0].item()
                 prediction = max(0, min(10, float(prediction)))
 
-                save_prediction({k: float(round(v, 4)) for k, v in user_input.items()}, prediction)
+                save_prediction(
+                    {k: float(round(v, 4)) for k, v in user_input.items()}, prediction
+                )
 
                 st.markdown("### Analiza Składników")
 
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    alcohol_status = "🟢 Optymalna" if 10 <= alcohol <= 14 else "🔴 Wymaga korekty"
+                    alcohol_status = (
+                        "🟢 Optymalna" if 10 <= alcohol <= 14 else "🔴 Wymaga korekty"
+                    )
                     st.write(f"**Alkohol ({alcohol}% vol):** {alcohol_status}")
 
-                    acidity_status = "🟢 Zbalansowana" if 0.2 <= volatile_acidity <= 0.6 else "🔴 Problematyczna"
+                    acidity_status = (
+                        "🟢 Zbalansowana"
+                        if 0.2 <= volatile_acidity <= 0.6
+                        else "🔴 Problematyczna"
+                    )
                     st.write(f"**Kwasowość lotna:** {acidity_status}")
 
                 with col_b:
-                    ph_status = "🟢 Optymalne" if 3.0 <= ph <= 3.8 else "🔴 Wymaga korekty"
+                    ph_status = (
+                        "🟢 Optymalne" if 3.0 <= ph <= 3.8 else "🔴 Wymaga korekty"
+                    )
                     st.write(f"**pH ({ph}):** {ph_status}")
 
-                    sulphates_status = "🟢 Odpowiednie" if sulphates >= 0.5 else "🔴 Za niskie"
+                    sulphates_status = (
+                        "🟢 Odpowiednie" if sulphates >= 0.5 else "🔴 Za niskie"
+                    )
                     st.write(f"**Siarczany:** {sulphates_status}")
 
                 with st.expander("Obliczone cechy zaawansowane"):
